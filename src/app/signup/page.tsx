@@ -14,26 +14,9 @@ import {
 } from "@/components/ui/card";
 import { signUpWithEmail, signInWithGoogle } from "@/app/actions/auth";
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [teamHandle, setTeamHandle] = useState("");
-  const [handleEdited, setHandleEdited] = useState(false);
-
-  function handleTeamNameChange(value: string) {
-    setTeamName(value);
-    if (!handleEdited) {
-      setTeamHandle(slugify(value));
-    }
-  }
 
   async function handleSignup(formData: FormData) {
     setLoading(true);
@@ -59,9 +42,9 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create your team</CardTitle>
+          <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>
-            Sign up and start posting as a team
+            Sign up and then create or join a team
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -72,14 +55,6 @@ export default function SignupPage() {
           )}
 
           <form action={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Your name</Label>
-              <Input
-                id="fullName"
-                name="fullName"
-                placeholder="Jane Doe"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -102,47 +77,8 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="border-t pt-4">
-              <p className="mb-3 text-sm font-medium">Team details</p>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="teamName">Team name</Label>
-                  <Input
-                    id="teamName"
-                    name="teamName"
-                    placeholder="Vizio Engineering"
-                    required
-                    value={teamName}
-                    onChange={(e) => handleTeamNameChange(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="teamHandle">Team handle</Label>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">@</span>
-                    <Input
-                      id="teamHandle"
-                      name="teamHandle"
-                      placeholder="vizio-engineering"
-                      required
-                      pattern="^[a-z0-9_-]+$"
-                      title="Lowercase letters, numbers, hyphens, and underscores only"
-                      value={teamHandle}
-                      onChange={(e) => {
-                        setTeamHandle(e.target.value);
-                        setHandleEdited(true);
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    This will be your team&apos;s unique URL identifier
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating team..." : "Create team & sign up"}
+              {loading ? "Creating account..." : "Sign up"}
             </Button>
           </form>
 

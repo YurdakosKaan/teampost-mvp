@@ -17,13 +17,25 @@ export async function getTeams(): Promise<Team[]> {
 export async function signInWithEmail(formData: FormData) {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: formData.get("email") as string,
     password: formData.get("password") as string,
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (data.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", data.user.id)
+      .single();
+
+    if (!profile) {
+      redirect("/onboarding");
+    }
   }
 
   redirect("/");
@@ -34,11 +46,8 @@ export async function signUpWithEmail(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const fullName = formData.get("fullName") as string;
-  const teamName = formData.get("teamName") as string;
-  const teamHandle = formData.get("teamHandle") as string;
 
-  const { data, error: signUpError } = await supabase.auth.signUp({
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
     password,
   });
@@ -47,23 +56,7 @@ export async function signUpWithEmail(formData: FormData) {
     return { error: signUpError.message };
   }
 
-  const userId = data.user?.id;
-  if (!userId) {
-    return { error: "Signup succeeded but no user ID was returned" };
-  }
-
-  const { error: teamError } = await supabase.rpc("create_team_and_profile", {
-    _user_id: userId,
-    _team_name: teamName,
-    _team_handle: teamHandle.toLowerCase().replace(/[^a-z0-9_-]/g, "-"),
-    _full_name: fullName || null,
-  });
-
-  if (teamError) {
-    return { error: teamError.message };
-  }
-
-  redirect("/");
+  redirect("/onboarding");
 }
 
 export async function signInWithGoogle() {
