@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PostCard } from "@/components/post-card";
 import { FollowButton } from "@/components/follow-button";
+import { InviteCode } from "@/components/invite-code";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { PostWithTeam } from "@/lib/types";
@@ -129,19 +130,8 @@ export default async function TeamProfilePage({ params }: PageProps) {
           </div>
         </div>
 
-        {isOwnTeam && (
-          <div className="mt-3 rounded-md bg-muted p-3">
-            <p className="text-xs font-medium">This is your team</p>
-            {team.invite_code && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Invite code:{" "}
-                <code className="rounded bg-background px-1.5 py-0.5 font-mono text-foreground">
-                  {team.invite_code}
-                </code>
-                {" "}— share this with people you want to invite
-              </p>
-            )}
-          </div>
+        {isOwnTeam && team.invite_code && (
+          <InviteCode teamId={team.id} code={team.invite_code} />
         )}
       </div>
 
