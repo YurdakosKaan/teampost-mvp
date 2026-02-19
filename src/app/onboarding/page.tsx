@@ -87,7 +87,10 @@ export default function OnboardingPage() {
             <TabsContent value="create" className="mt-4">
               <form action={handleCreateTeam} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Your name</Label>
+                  <Label htmlFor="fullName">
+                    Your name{" "}
+                    <span className="text-muted-foreground font-normal">(optional)</span>
+                  </Label>
                   <Input id="fullName" name="fullName" placeholder="Jane Doe" />
                 </div>
                 <div className="space-y-2">
@@ -129,7 +132,10 @@ export default function OnboardingPage() {
             <TabsContent value="join" className="mt-4">
               <form action={handleJoinTeam} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="joinFullName">Your name</Label>
+                  <Label htmlFor="joinFullName">
+                    Your name{" "}
+                    <span className="text-muted-foreground font-normal">(optional)</span>
+                  </Label>
                   <Input
                     id="joinFullName"
                     name="fullName"
@@ -163,6 +169,11 @@ export default function OnboardingPage() {
                         </button>
                       ))}
                     </div>
+                  )}
+                  {!selectedTeamId && teams.length > 0 && (
+                    <p className="text-sm text-amber-600">
+                      Please select a team above to continue
+                    </p>
                   )}
                 </div>
                 <Button

@@ -104,11 +104,12 @@ export async function createTeamAndProfile(formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const teamName = formData.get("teamName") as string;
   const teamHandle = formData.get("teamHandle") as string;
+  const sanitizedHandle = teamHandle.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
 
   const { error } = await supabase.rpc("create_team_and_profile", {
     _user_id: user.id,
     _team_name: teamName,
-    _team_handle: teamHandle.toLowerCase().replace(/[^a-z0-9_-]/g, "-"),
+    _team_handle: sanitizedHandle,
     _full_name: fullName || null,
   });
 
@@ -116,7 +117,7 @@ export async function createTeamAndProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/");
+  redirect(`/team/${sanitizedHandle}`);
 }
 
 export async function joinTeam(formData: FormData) {
@@ -133,6 +134,10 @@ export async function joinTeam(formData: FormData) {
   const teamId = formData.get("teamId") as string;
   const fullName = formData.get("fullName") as string;
 
+  if (!teamId) {
+    return { error: "Please select a team to join" };
+  }
+
   const { error } = await supabase.rpc("join_team", {
     _user_id: user.id,
     _team_id: teamId,
@@ -143,5 +148,11 @@ export async function joinTeam(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/");
+  const { data: team } = await supabase
+    .from("teams")
+    .select("handle")
+    .eq("id", teamId)
+    .single();
+
+  redirect(team ? `/team/${team.handle}` : "/");
 }
