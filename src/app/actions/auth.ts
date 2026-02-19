@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import type { Team } from "@/lib/types";
@@ -38,6 +39,7 @@ export async function signInWithEmail(formData: FormData) {
     }
   }
 
+  revalidatePath("/", "layout");
   redirect("/");
 }
 
@@ -80,6 +82,7 @@ export async function signInWithGoogle() {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
   redirect("/");
 }
 
@@ -128,6 +131,7 @@ export async function createTeamAndProfile(formData: FormData) {
     return { error: error.message };
   }
 
+  revalidatePath("/", "layout");
   redirect(`/team/${sanitizedHandle}`);
 }
 
@@ -183,5 +187,6 @@ export async function joinTeam(formData: FormData) {
     .eq("id", teamId)
     .single();
 
+  revalidatePath("/", "layout");
   redirect(team ? `/team/${team.handle}` : "/");
 }
