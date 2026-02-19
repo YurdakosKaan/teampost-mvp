@@ -4,7 +4,7 @@ A team-based social media web application built with **Next.js 15 (App Router)**
 
 ## Live Demo
 
-> _Deploy link will be added after Vercel deployment._
+**[https://app-tawny-psi.vercel.app](https://app-tawny-psi.vercel.app)**
 
 ---
 

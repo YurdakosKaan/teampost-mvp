@@ -12,8 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createTeamAndProfile, joinTeam } from "@/app/actions/auth";
-import { createClient } from "@/lib/supabase/client";
+import { createTeamAndProfile, joinTeam, getTeams } from "@/app/actions/auth";
 import type { Team } from "@/lib/types";
 
 function slugify(text: string): string {
@@ -33,15 +32,7 @@ export default function OnboardingPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchTeams() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("teams")
-        .select("*")
-        .order("name");
-      if (data) setTeams(data);
-    }
-    fetchTeams();
+    getTeams().then(setTeams);
   }, []);
 
   function handleTeamNameChange(value: string) {

@@ -3,6 +3,16 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import type { Team } from "@/lib/types";
+
+export async function getTeams(): Promise<Team[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("teams")
+    .select("*")
+    .order("name");
+  return data ?? [];
+}
 
 export async function signInWithEmail(formData: FormData) {
   const supabase = await createClient();
