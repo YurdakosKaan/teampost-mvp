@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { regenerateInviteCode } from "@/app/actions/teams";
 
 interface InviteCodeProps {
@@ -15,10 +26,6 @@ export function InviteCode({ teamId, code }: InviteCodeProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleRegenerate() {
-    if (!confirm("This will invalidate the current invite code. Anyone with the old code won't be able to join. Continue?")) {
-      return;
-    }
-
     setLoading(true);
     const result = await regenerateInviteCode(teamId);
     if (result.success) {
@@ -49,15 +56,35 @@ export function InviteCode({ teamId, code }: InviteCodeProps) {
         >
           {copied ? "Copied!" : "Copy"}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-          onClick={handleRegenerate}
-          disabled={loading}
-        >
-          {loading ? "Regenerating..." : "Regenerate"}
-        </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+              disabled={loading}
+            >
+              {loading ? "Regenerating..." : "Regenerate"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Regenerate invite code?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will invalidate the current invite code. Anyone with the old
+                code won&apos;t be able to join your team. This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRegenerate}>
+                Regenerate
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         Share this code with people you want to invite to your team
