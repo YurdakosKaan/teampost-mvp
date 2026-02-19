@@ -49,5 +49,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Redirect away from onboarding if user already has a profile
+  if (user && request.nextUrl.pathname.startsWith("/onboarding")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("team_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }

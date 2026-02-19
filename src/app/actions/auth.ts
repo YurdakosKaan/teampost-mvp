@@ -101,6 +101,21 @@ export async function createTeamAndProfile(formData: FormData) {
     return { error: "Not authenticated" };
   }
 
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("team_id")
+    .eq("id", user.id)
+    .single();
+
+  if (existingProfile) {
+    const { data: existingTeam } = await supabase
+      .from("teams")
+      .select("handle")
+      .eq("id", existingProfile.team_id)
+      .single();
+    redirect(existingTeam ? `/team/${existingTeam.handle}` : "/");
+  }
+
   const fullName = formData.get("fullName") as string;
   const teamName = formData.get("teamName") as string;
   const teamHandle = formData.get("teamHandle") as string;
@@ -114,6 +129,9 @@ export async function createTeamAndProfile(formData: FormData) {
   });
 
   if (error) {
+    if (error.code === "23505") {
+      return { error: "You are already a member of a team" };
+    }
     return { error: error.message };
   }
 
@@ -138,6 +156,21 @@ export async function joinTeam(formData: FormData) {
     return { error: "Please select a team to join" };
   }
 
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("team_id")
+    .eq("id", user.id)
+    .single();
+
+  if (existingProfile) {
+    const { data: existingTeam } = await supabase
+      .from("teams")
+      .select("handle")
+      .eq("id", existingProfile.team_id)
+      .single();
+    redirect(existingTeam ? `/team/${existingTeam.handle}` : "/");
+  }
+
   const { error } = await supabase.rpc("join_team", {
     _user_id: user.id,
     _team_id: teamId,
@@ -145,6 +178,9 @@ export async function joinTeam(formData: FormData) {
   });
 
   if (error) {
+    if (error.code === "23505") {
+      return { error: "You are already a member of a team" };
+    }
     return { error: error.message };
   }
 
