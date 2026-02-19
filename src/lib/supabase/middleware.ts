@@ -29,35 +29,45 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
   const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup");
+    pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isOnboarding = pathname.startsWith("/onboarding");
+  const isAuthCallback = pathname.startsWith("/auth/callback");
 
-  const isProtectedPage =
-    request.nextUrl.pathname.startsWith("/compose") ||
-    request.nextUrl.pathname.startsWith("/onboarding");
-
-  if (!user && isProtectedPage) {
+  // Unauthenticated: block protected pages
+  if (!user && (pathname.startsWith("/compose") || isOnboarding)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
+  // Authenticated: redirect away from auth pages
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  // Redirect away from onboarding if user already has a profile
-  if (user && request.nextUrl.pathname.startsWith("/onboarding")) {
+  // Authenticated: enforce team membership (single profile query)
+  if (user && !isAuthCallback && !isAuthPage) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("team_id")
       .eq("id", user.id)
       .single();
 
-    if (profile) {
+    const hasTeam = !!profile;
+
+    if (!hasTeam && !isOnboarding) {
+      // No team yet — force onboarding
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (hasTeam && isOnboarding) {
+      // Already has a team — no need for onboarding
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
