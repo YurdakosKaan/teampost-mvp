@@ -146,11 +146,11 @@ export async function joinTeam(formData: FormData) {
     return { error: "Not authenticated" };
   }
 
-  const teamId = formData.get("teamId") as string;
+  const inviteCode = (formData.get("inviteCode") as string)?.trim();
   const fullName = formData.get("fullName") as string;
 
-  if (!teamId) {
-    return { error: "Please select a team to join" };
+  if (!inviteCode) {
+    return { error: "Please enter an invite code" };
   }
 
   const { data: existingProfile } = await supabase
@@ -168,9 +168,21 @@ export async function joinTeam(formData: FormData) {
     redirect(existingTeam ? `/team/${existingTeam.handle}` : "/");
   }
 
+  // Look up team by invite code
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id, handle")
+    .eq("invite_code", inviteCode)
+    .single();
+
+  if (!team) {
+    return { error: "Invalid invite code. Please check with your team admin." };
+  }
+
   const { error } = await supabase.rpc("join_team", {
     _user_id: user.id,
-    _team_id: teamId,
+    _team_id: team.id,
+    _invite_code: inviteCode,
     _full_name: fullName || null,
   });
 
@@ -180,12 +192,6 @@ export async function joinTeam(formData: FormData) {
     }
     return { error: error.message };
   }
-
-  const { data: team } = await supabase
-    .from("teams")
-    .select("handle")
-    .eq("id", teamId)
-    .single();
 
   revalidatePath("/", "layout");
   redirect(team ? `/team/${team.handle}` : "/");

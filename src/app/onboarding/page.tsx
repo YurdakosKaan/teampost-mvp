@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createTeamAndProfile, joinTeam, getTeams } from "@/app/actions/auth";
-import type { Team } from "@/lib/types";
+import { createTeamAndProfile, joinTeam } from "@/app/actions/auth";
 
 function slugify(text: string): string {
   return text
@@ -28,12 +27,6 @@ export default function OnboardingPage() {
   const [teamName, setTeamName] = useState("");
   const [teamHandle, setTeamHandle] = useState("");
   const [handleEdited, setHandleEdited] = useState(false);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getTeams().then(setTeams);
-  }, []);
 
   function handleTeamNameChange(value: string) {
     setTeamName(value);
@@ -81,7 +74,7 @@ export default function OnboardingPage() {
           <Tabs defaultValue="create">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="create">Create new team</TabsTrigger>
-              <TabsTrigger value="join">Join existing</TabsTrigger>
+              <TabsTrigger value="join">Join with code</TabsTrigger>
             </TabsList>
 
             <TabsContent value="create" className="mt-4">
@@ -143,44 +136,19 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Select a team</Label>
-                  <input type="hidden" name="teamId" value={selectedTeamId || ""} />
-                  {teams.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No teams yet. Create one instead!
-                    </p>
-                  ) : (
-                    <div className="max-h-48 space-y-2 overflow-y-auto">
-                      {teams.map((team) => (
-                        <button
-                          key={team.id}
-                          type="button"
-                          onClick={() => setSelectedTeamId(team.id)}
-                          className={`w-full rounded-md border p-3 text-left transition-colors ${
-                            selectedTeamId === team.id
-                              ? "border-primary bg-primary/5"
-                              : "hover:bg-muted"
-                          }`}
-                        >
-                          <p className="font-medium">{team.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            @{team.handle}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {!selectedTeamId && teams.length > 0 && (
-                    <p className="text-sm text-amber-600">
-                      Please select a team above to continue
-                    </p>
-                  )}
+                  <Label htmlFor="inviteCode">Invite code</Label>
+                  <Input
+                    id="inviteCode"
+                    name="inviteCode"
+                    placeholder="e.g. a1b2c3d4"
+                    required
+                    className="font-mono tracking-wider"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ask your team admin for the invite code
+                  </p>
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading || !selectedTeamId}
-                >
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Joining..." : "Join team"}
                 </Button>
               </form>

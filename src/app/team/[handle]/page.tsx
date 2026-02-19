@@ -130,9 +130,18 @@ export default async function TeamProfilePage({ params }: PageProps) {
         </div>
 
         {isOwnTeam && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            This is your team
-          </p>
+          <div className="mt-3 rounded-md bg-muted p-3">
+            <p className="text-xs font-medium">This is your team</p>
+            {team.invite_code && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Invite code:{" "}
+                <code className="rounded bg-background px-1.5 py-0.5 font-mono text-foreground">
+                  {team.invite_code}
+                </code>
+                {" "}— share this with people you want to invite
+              </p>
+            )}
+          </div>
         )}
       </div>
 

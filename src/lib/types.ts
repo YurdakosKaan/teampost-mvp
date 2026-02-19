@@ -2,6 +2,7 @@ export interface Team {
   id: string;
   name: string;
   handle: string;
+  invite_code: string | null;
   created_at: string;
 }
 

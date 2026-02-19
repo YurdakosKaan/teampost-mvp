@@ -4,10 +4,11 @@
 
 -- 1. Teams
 create table public.teams (
-  id         uuid primary key default gen_random_uuid(),
-  name       text not null,
-  handle     text not null unique,
-  created_at timestamptz not null default now(),
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  handle      text not null unique,
+  invite_code text unique default substr(md5(random()::text), 1, 8),
+  created_at  timestamptz not null default now(),
 
   constraint teams_handle_format check (handle ~ '^[a-z0-9_-]+$')
 );
@@ -133,9 +134,10 @@ $$;
 
 -- Join an existing team
 create or replace function public.join_team(
-  _user_id   uuid,
-  _team_id   uuid,
-  _full_name text default null
+  _user_id     uuid,
+  _team_id     uuid,
+  _invite_code text,
+  _full_name   text default null
 )
 returns void
 language plpgsql
@@ -143,8 +145,11 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not exists (select 1 from public.teams where id = _team_id) then
-    raise exception 'Team not found';
+  if not exists (
+    select 1 from public.teams
+    where id = _team_id and invite_code = _invite_code
+  ) then
+    raise exception 'Invalid team or invite code';
   end if;
 
   insert into public.profiles (id, team_id, full_name)
