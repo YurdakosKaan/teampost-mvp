@@ -132,11 +132,13 @@ Both email/password and Google OAuth follow the same unified flow:
 
 ### Team Model & Invite System
 
-- Every user belongs to exactly one team
+- Every user belongs to exactly one team — enforced at DB level (profiles PK) and middleware level
+- Logged-in users without a team are locked to `/onboarding` — they cannot browse the app until they create or join a team
 - Teams have an auto-generated 8-character invite code
 - Joining a team requires the correct invite code (validated both client-side and in the DB function)
-- Team members can see the invite code on the team profile page to share with others
-- This prevents unauthorized users from joining arbitrary teams
+- Team members can see, copy, and **regenerate** the invite code from the team profile page
+- Regenerating invalidates the old code immediately — security mitigation if a code leaks
+- Three layers of defense against duplicate profiles: DB constraint, middleware guard, server action check
 
 ### Posting
 
@@ -159,10 +161,12 @@ Both email/password and Google OAuth follow the same unified flow:
 
 ### Edge Cases Handled
 
-- Duplicate profile prevention (middleware + server-side checks)
-- Stale navbar after auth state changes (revalidatePath on layout)
-- OAuth users without profiles redirected to onboarding
-- Friendly error messages instead of raw DB constraint violations
+- **Team membership enforcement** — users without a team are locked to onboarding via middleware
+- **Duplicate profile prevention** — three layers: DB primary key, middleware redirect, server action check
+- **Stale navbar** — revalidatePath on every auth state change forces fresh server component renders
+- **OAuth users without profiles** — redirected to onboarding after callback
+- **Invite code leaks** — team members can regenerate codes with confirmation dialog
+- **Friendly errors** — raw DB constraint violations translated to user-friendly messages
 
 ---
 
@@ -180,14 +184,16 @@ src/
     auth/callback/route.ts      # OAuth callback handler
     team/[handle]/page.tsx      # Team profile page
     actions/
-      auth.ts                   # Auth + team server actions
+      auth.ts                   # Auth + team onboarding server actions
       posts.ts                  # Post creation server action
       follows.ts                # Follow/unfollow server actions
+      teams.ts                  # Invite code regeneration server action
   components/
     navbar.tsx                  # Top nav with auth state (server component)
     post-card.tsx               # Single post display
     follow-button.tsx           # Follow/unfollow toggle
-    ui/                         # shadcn/ui primitives
+    invite-code.tsx             # Invite code display, copy, and regenerate
+    ui/                         # shadcn/ui primitives (incl. AlertDialog)
   lib/
     supabase/
       client.ts                 # Browser Supabase client
