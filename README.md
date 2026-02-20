@@ -69,13 +69,41 @@ Open [http://localhost:3000](http://localhost:3000).
 | `posts` | Text content (max 500 chars) owned by teams |
 | `follows` | Directional team-to-team follow relationships |
 
-### Entity Relationships
+### Entity Relationship Diagram
 
-```
-auth.users  1─1  profiles  N─1  teams
-                                  │
-                          posts ──┘ (team_id)
-                          follows ─┘ (follower_team_id, following_team_id)
+```mermaid
+erDiagram
+    teams {
+        uuid id PK
+        text name "not null"
+        text handle "unique, not null"
+        text invite_code "unique, auto-generated"
+        timestamptz created_at
+    }
+    profiles {
+        uuid id PK "references auth.users"
+        uuid team_id FK "references teams, not null"
+        text full_name "nullable"
+        timestamptz created_at
+    }
+    posts {
+        uuid id PK
+        uuid team_id FK "references teams, not null"
+        uuid author_id FK "references profiles, audit only"
+        text content "not null, 1-500 chars"
+        timestamptz created_at
+    }
+    follows {
+        uuid follower_team_id PK,FK
+        uuid following_team_id PK,FK
+        timestamptz created_at
+    }
+
+    teams ||--o{ profiles : "has members"
+    teams ||--o{ posts : "owns"
+    profiles ||--o{ posts : "authored (audit)"
+    teams ||--o{ follows : "follower"
+    teams ||--o{ follows : "following"
 ```
 
 ### Key Constraints
@@ -100,7 +128,18 @@ All tables have RLS enabled. The core pattern uses a `get_my_team_id()` helper f
 | posts | Everyone (public feed) | Own team members only | Own team members only |
 | follows | Everyone | Own team as follower | Own team as follower |
 
-**Why this design:** The public SELECT on all tables enables the public global feed (no auth required to read) while ensuring all write operations are scoped to the authenticated user's team. The `security definer` helper function avoids infinite RLS recursion when checking team membership.
+**Core RLS pattern:**
+
+```mermaid
+flowchart LR
+    A["auth.uid()"] --> B["profiles table"]
+    B --> C["get_my_team_id()"]
+    C --> D{"row.team_id == my_team_id?"}
+    D -->|Yes| E[Allow Write]
+    D -->|No| F[Deny Write]
+```
+
+The public SELECT on all tables enables the public global feed (no auth required to read) while ensuring all write operations are scoped to the authenticated user's team. The `security definer` helper function avoids infinite RLS recursion when checking team membership.
 
 ### Database Functions
 
@@ -122,12 +161,35 @@ The MakerKit starter includes billing, subscriptions, and org management — hea
 
 Both email/password and Google OAuth follow the same unified flow:
 
+```mermaid
+flowchart TD
+    A[Landing Page] --> B{Has Account?}
+    B -->|No| C[Signup Page]
+    B -->|Yes| D[Login Page]
+    C --> E[Email/Password]
+    C --> F[Google OAuth]
+    D --> G[Email/Password]
+    D --> H[Google OAuth]
+    E --> I[Onboarding]
+    F --> J[OAuth Callback]
+    G --> K{Has Profile?}
+    H --> J
+    J --> K
+    K -->|Yes| L[Home Feed]
+    K -->|No| I
+    I --> M{Create or Join?}
+    M -->|Create| N[New Team + Profile]
+    M -->|Join| O["Enter Invite Code"]
+    N --> P[Team Profile Page]
+    O --> P
+```
+
 1. **Sign up** — creates the auth user only (no team yet)
 2. **Onboarding** — user creates a new team OR joins an existing team via invite code
 3. **Redirect** — user lands on their team's profile page with full navbar
 
 - **Session persistence** is handled by `@supabase/ssr` with cookie-based sessions and Next.js middleware that refreshes the session on every request.
-- **Login with no profile** — if a returning user somehow has no profile, they are redirected to onboarding.
+- **Team membership enforcement** — the middleware checks every request: if a logged-in user has no profile, they are redirected to onboarding regardless of which page they try to visit.
 - **OAuth callback** at `/auth/callback` checks for existing profile and routes accordingly.
 
 ### Team Model & Invite System
